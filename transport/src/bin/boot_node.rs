@@ -9,15 +9,18 @@ use clap::Parser;
 
 use mypai_network_transport::{
     util::{get_keypair},
-    protocol::dht_protocol,
+    protocol::{dht_protocol, ID_PROTOCOL},
     TransportArgs,
 };
 
 use libp2p::{
-    identity::Keypair, 
+    identify,
+    identity::Keypair,
     PeerId,
     kad::{self, store::MemoryStore, Mode},
 };
+
+use libp2p_swarm_derive::NetworkBehaviour;
 
 
 #[derive(Parser)]

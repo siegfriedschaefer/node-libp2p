@@ -34,6 +34,7 @@ ethers = { version = "2", features = ["ws"] }
 # libp2p = { path = "../../libp2p", features = [ "tokio", "gossipsub", "mdns", "noise", "macros", "tcp", "yamux", "quic"] }
 # libp2p = { version = "0.53", features = [ "tokio", "gossipsub", "mdns", "noise", "macros", "tcp", "yamux", "quic"] }
 libp2p = { workspace=true, features = ["dns", "tokio", "noise", "yamux", "identify", "kad", "relay", "dcutr", "ping", "request-response", "gossipsub", "serde", "autonat", "quic"] }
+libp2p-swarm-derive = { workspace = true }
 
 # # libp2p = { version = "0.53", features = [ "tokio", "tls", "kad", "noise", "macros", "tcp", "yamux"] }
 # tracing = { workspace = true }
