@@ -10,6 +10,7 @@ use clap::Parser;
 use mypai_network_transport::{
     util::{get_keypair},
     protocol::{dht_protocol, ID_PROTOCOL},
+    QuicConfig,
     TransportArgs,
 };
 
@@ -24,6 +25,7 @@ use libp2p::{
     gossipsub::{self, MessageAuthenticity},
     ping,
     relay,
+    SwarmBuilder,
 };
 
 use libp2p_swarm_derive::NetworkBehaviour;
@@ -106,7 +108,28 @@ async fn main() -> anyhow::Result<()> {
         ),
         allow: Default::default(),
     };
- 
+
+    // Start the swarm
+    let quic_config = QuicConfig::from_env();
+    let mut swarm = SwarmBuilder::with_existing_identity(keypair)
+        .with_tokio()
+        .with_quic_config(|config| config.mtu_upper_bound(quic_config.mtu_discovery_max))
+        .with_dns()?
+        .with_behaviour(behaviour)
+        .expect("infallible")
+        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(120)))
+        .build();
+    for listen_addr in listen_addrs {
+        log::info!("Listening on {}", listen_addr);
+        swarm.listen_on(listen_addr)?;
+    }
+    for public_addr in cli.transport.p2p_public_addrs {
+        log::info!("Adding public address {public_addr}");
+        swarm.add_external_address(public_addr);
+    }
+
+    swarm.behaviour_mut().kademlia.set_mode(Some(Mode::Server));
+
     log::info!("Bootnode stopped");
 
     Ok(())
