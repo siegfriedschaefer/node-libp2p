@@ -1,0 +1,45 @@
+[package]
+name = "mypai_network_transport"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "AGPL-3.0-or-later"
+
+[[bin]]
+name = "keygen"
+path = "src/bin/keygen.rs"
+
+[[bin]]
+name = "boot_node"
+path = "src/bin/boot_node.rs"
+
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+# tokio = { version = "1", features = ["fs", "macros", "rt", "rt-multi-thread", "signal", "sync"] }
+# tokio-util = "0.7"
+
+async-trait = "0.1"
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+env_logger = "0.11"
+log = "0.4"
+ethers = { version = "2", features = ["ws"] }
+
+
+
+
+
+# futures = { workspace = true }
+# libp2p = { path = "../../libp2p", features = [ "tokio", "gossipsub", "mdns", "noise", "macros", "tcp", "yamux", "quic"] }
+# libp2p = { version = "0.53", features = [ "tokio", "gossipsub", "mdns", "noise", "macros", "tcp", "yamux", "quic"] }
+libp2p = { workspace=true, features = ["dns", "tokio", "noise", "yamux", "identify", "kad", "relay", "dcutr", "ping", "request-response", "gossipsub", "serde", "autonat", "quic"] }
+
+# # libp2p = { version = "0.53", features = [ "tokio", "tls", "kad", "noise", "macros", "tcp", "yamux"] }
+# tracing = { workspace = true }
+# tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[lints]
+
+
+
