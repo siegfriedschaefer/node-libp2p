@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 use libp2p::PeerId;
 use clap::{self, command, Parser};
-// use subsquid_network_transport::util;
+use mypai_network_transport::util;
 
 #[derive(Parser)]
 #[command(version)]
@@ -13,8 +13,6 @@ struct Cli {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-
-    println!("keygen");
 
     let filename = Cli::parse().filename;
     let keypair = util::get_keypair(Some(filename)).await?;
