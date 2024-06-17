@@ -29,3 +29,18 @@ pub async fn get_keypair(path: Option<PathBuf>) -> anyhow::Result<Keypair> {
         }
     }
 }
+
+pub fn addr_is_reachable(addr: &Multiaddr) -> bool {
+    match addr.iter().next() {
+        Some(Protocol::Ip4(addr)) => {
+            !(addr.is_loopback() || addr.is_link_local())
+            // We need to allow private addresses for testing in local environment
+            &&(!addr.is_private() || std::env::var("PRIVATE_NETWORK").is_ok())
+        }
+        Some(Protocol::Ip6(addr)) => !addr.is_loopback(),
+        Some(Protocol::Dns(_) | Protocol::Dns4(_) | Protocol::Dns6(_) | Protocol::Dnsaddr(_)) => {
+            true
+        }
+        _ => false,
+    }
+}

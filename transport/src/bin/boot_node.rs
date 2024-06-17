@@ -2,13 +2,17 @@
 use std::{
     path::PathBuf,
     time::Duration,
+    collections::HashSet
 };
 
 use env_logger::Env;
 use clap::Parser;
+use futures::StreamExt;
+
+use tokio::signal::unix::{signal, SignalKind};
 
 use mypai_network_transport::{
-    util::{get_keypair},
+    util::{addr_is_reachable, get_keypair},
     protocol::{dht_protocol, ID_PROTOCOL},
     QuicConfig,
     TransportArgs,
@@ -25,6 +29,7 @@ use libp2p::{
     gossipsub::{self, MessageAuthenticity},
     ping,
     relay,
+    swarm::SwarmEvent,
     SwarmBuilder,
 };
 
@@ -129,6 +134,63 @@ async fn main() -> anyhow::Result<()> {
     }
 
     swarm.behaviour_mut().kademlia.set_mode(Some(Mode::Server));
+
+    let mut sigint = signal(SignalKind::interrupt())?;
+    let mut sigterm = signal(SignalKind::terminate())?;
+
+/*
+    we do not support any contracts right now.
+    let mut registered_nodes = HashSet::new();
+    let mut nodes_stream = contract_client.network_nodes_stream(Duration::from_secs(300)).fuse();
+*/
+
+    loop {
+        let event = tokio::select! {
+            event = swarm.select_next_some() => event,
+    /*
+            res = nodes_stream.select_next_some() => {
+                let nodes = match res {
+                    Err(e) => {
+                        log::error!("Error retrieving registered nodes from chain: {e:?}");
+                        continue;
+                    }
+                    Ok(nodes) if nodes == registered_nodes => {
+                        log::debug!("Registered nodes set unchanged.");
+                        continue;
+                    }
+                    Ok(nodes) => nodes,
+                };
+                log::info!("Updating registered nodes");
+                // Disallow nodes which are no longer registered
+                for peer_id in registered_nodes.difference(&nodes) {
+                    log::info!("Blocking peer {peer_id}");
+                    swarm.behaviour_mut().allow.disallow_peer(*peer_id);
+                }
+                // Allow newly registered nodes
+                for peer_id in nodes.difference(&registered_nodes) {
+                    log::info!("Allowing peer {peer_id}");
+                    swarm.behaviour_mut().allow.allow_peer(*peer_id);
+                }
+                registered_nodes = nodes;
+                continue;
+            }
+    */
+            _ = sigint.recv() => break,
+            _ = sigterm.recv() => break,
+        };
+
+
+        log::trace!("Swarm event: {event:?}");
+        if let SwarmEvent::Behaviour(BehaviourEvent::Identify(identify::Event::Received {
+            peer_id,
+            info: identify::Info { listen_addrs, .. },
+        })) = event
+        {
+            listen_addrs.into_iter().filter(addr_is_reachable).for_each(|addr| {
+                swarm.behaviour_mut().kademlia.add_address(&peer_id, addr);
+            });
+        }
+    }
 
     log::info!("Bootnode stopped");
 
